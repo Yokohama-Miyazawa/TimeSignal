@@ -1,0 +1,80 @@
+<!doctype html>
+<html>
+<head>
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script>
+var audioCtx = null;
+var oscillator;
+var isSound = false;
+var interval = 60;
+
+const play = (hz=440, sec=1, fadeOut=false, lingeringSoundLength=0) => {
+  oscillator = audioCtx.createOscillator();
+  oscillator.type = "sine";
+  oscillator.frequency.value = hz;
+  
+  if(fadeOut && (sec > lingeringSoundLength)) {
+    let fadeOutStart = sec - lingeringSoundLength;
+    let gainNode = audioCtx.createGain();
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    gainNode.gain.linearRampToValueAtTime(1, audioCtx.currentTime);
+    gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + sec);
+  } else {
+    oscillator.connect(audioCtx.destination);
+  }
+
+  setTimeout(() => {
+    oscillator.stop();
+  }, sec * 1000);
+
+  oscillator.start();
+}
+
+$(() => {
+  $('#play').on('click', () => {
+    if (!audioCtx) { audioCtx = new AudioContext(); }
+    isSound = !isSound;
+    let buttonText = isSound ? 'ON' : 'OFF';
+    $('#play').text(buttonText);
+  });
+
+  $('#signalInterval').on('change', (e) =>{
+    console.log(e.currentTarget.value);
+    interval = parseInt(e.currentTarget.value);
+  });
+
+  setInterval(() => {
+      let now = new Date();
+      $('#clock').text(now);
+      if(isSound){
+        let min = now.getMinutes();
+        let sec = now.getSeconds();
+        if(min % interval == 0 && sec == 0){ play(880, 3, true, 2); console.log(now); }
+        else if((min + 1) % interval == 0 && 57 <= sec && sec <= 59) play(440, 0.1);
+      }
+    },
+    1000
+  );
+
+  console.log("pgae loaded.");
+});
+</script>  
+</head>
+<body>
+<div id="clock">00:00:00</div>
+<label for="play">時報音</label>
+<button id="play">OFF</button>
+<br/>
+<label for="signalInterval">時報間隔(分)</label>
+<select id="signalInterval">
+  <option value="1">1</option>
+  <option value="5">5</option>
+  <option value="10">10</option>
+  <option value="15">15</option>
+  <option value="20">20</option>
+  <option value="30">30</option>
+  <option value="60" selected>60</option>
+</select>
+</body>
+</html>
